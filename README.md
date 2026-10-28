@@ -89,5 +89,5 @@ failed send, same person on IG + FB, AI usage tracking.
 ## Next
 
 - Phase 1 exit: replay 10–20 real pilot conversations through the bot on a test IG account.
-- OAuth "Connect Instagram / Facebook" button (replaces `add-channel`).
+- First deploy (Neon + Render) and a real end-to-end test on a test Instagram account.
 - Product photos and customer photo matching.
