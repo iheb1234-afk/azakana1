@@ -3,7 +3,8 @@ import { pool } from '../db.js';
 import { getAdapter } from '../channels/registry.js';
 import { decryptToken } from '../lib/crypto.js';
 import { log, reportError } from '../lib/log.js';
-import { alertAdmin, notifyOwner } from '../notify/telegram.js';
+import { alertAdmin } from '../notify/telegram.js';
+import { notifyShop } from '../notify/index.js';
 import type { Channel, Conversation, NormalizedMessage, Shop } from '../types.js';
 import { GeminiProvider, generateWithRetry, type Content, type ModelProvider } from './ai.js';
 import { loadCatalog } from './catalog.js';
@@ -52,8 +53,8 @@ export async function ingest(msg: NormalizedMessage): Promise<number | null> {
 
   // THE dedupe: unique (channel, external_message_id), insert-or-ignore.
   const ins = await pool.query(
-    `INSERT INTO messages (conversation_id, channel, direction, text, media_url, external_message_id, created_at)
-     VALUES ($1,$2,'in',$3,$4,$5, to_timestamp($6 / 1000.0))
+    `INSERT INTO messages (conversation_id, channel, direction, sent_by, text, media_url, external_message_id, created_at)
+     VALUES ($1,$2,'in','customer',$3,$4,$5, to_timestamp($6 / 1000.0))
      ON CONFLICT (channel, external_message_id) DO NOTHING RETURNING id`,
     [conv.id, msg.channel, msg.text, msg.media[0]?.url ?? null, msg.messageId, msg.timestamp],
   );
@@ -128,7 +129,7 @@ async function handleTurn(convId: number) {
     // Owner took over: store only, notify, stop.
     if (conv.bot_paused) {
       await markInbound(ids, 'skipped');
-      await notifyOwners(shop.id, `💬 Nouveau message (bot en pause) de ${conv.customer_id}:\n${batch.map((m) => m.text ?? '[photo]').join('\n')}`);
+      await attention(shop.id, conv, 'Nouveau message (vous avez pris la main)', batch.map((m) => m.text ?? '[photo]').join('\n'));
       return;
     }
 
@@ -139,7 +140,7 @@ async function handleTurn(convId: number) {
     let reply: string;
     if (hasMedia) {
       await pool.query('UPDATE conversations SET needs_attention = TRUE WHERE id = $1', [conv.id]);
-      await notifyOwners(shop.id, `📷 Photo reçue de ${conv.customer_id}. À vérifier dans la conversation.`);
+      await attention(shop.id, conv, 'Photo reçue, à vérifier');
     }
 
     if (hasMedia && texts.length === 0) {
@@ -169,7 +170,12 @@ async function handleTurn(convId: number) {
 async function doConfirm(conv: Conversation, shop: Shop): Promise<string> {
   const r = await confirmOrder(conv.id);
   if (r.ok) {
-    await notifyOwners(shop.id, `🛒 Nouvelle commande #${r.orderId} (${conv.channel})\n\n${r.recap}`);
+    const o = (await pool.query(
+      `SELECT o.total, string_agg(oi.qty || ' × ' || p.name || ' ' || v.label, ', ' ORDER BY oi.id) AS summary
+         FROM orders o JOIN order_items oi ON oi.order_id = o.id
+         JOIN variants v ON v.id = oi.variant_id JOIN products p ON p.id = v.product_id
+        WHERE o.id = $1 GROUP BY o.id`, [r.orderId])).rows[0];
+    await notifyShop(shop.id, { kind: 'new_order', orderId: r.orderId, summary: o.summary, total: `${Number(o.total.toFixed(3))} DT`, recap: r.recap });
     return CONFIRMED(r.recap);
   }
   if (r.reason === 'out_of_stock') return SOLD_OUT(r.items);
@@ -235,7 +241,7 @@ async function execute(conv: Conversation, shop: Shop, name: string, args: Recor
         `UPDATE conversations SET state = 'handed_to_owner', bot_paused = TRUE, needs_attention = TRUE WHERE id = $1`,
         [fresh.id],
       );
-      await notifyOwners(shop.id, `🙋 Le bot passe la main (${fresh.channel}, client ${fresh.customer_id}).\nRaison: ${String(args.reason ?? '-')}`);
+      await attention(shop.id, fresh, `Le bot vous passe la main : ${String(args.reason ?? '-')}`);
       return { kind: 'reply', text: "Je transmets votre demande à la boutique, on vous répond très vite 🙏" };
     default:
       return { kind: 'rejected', error: `Outil inconnu ${name}.` };
@@ -270,13 +276,13 @@ function mergeRoles(contents: Content[]): Content[] {
 }
 
 /** Reply is stored BEFORE sending, in the same step that closes the inbound batch: a crash can't lose it. */
-async function queueReply(conv: Conversation, inboundIds: number[], text: string) {
+async function queueReply(conv: Conversation, inboundIds: number[], text: string, sentBy: 'bot' | 'owner' = 'bot') {
   const c = await pool.connect();
   try {
     await c.query('BEGIN');
     await c.query(
-      `INSERT INTO messages (conversation_id, channel, direction, text, status) VALUES ($1,$2,'out',$3,'received')`,
-      [conv.id, conv.channel, text],
+      `INSERT INTO messages (conversation_id, channel, direction, sent_by, text, status) VALUES ($1,$2,'out',$3,$4,'received')`,
+      [conv.id, conv.channel, sentBy, text],
     );
     if (inboundIds.length) await c.query(`UPDATE messages SET status = 'done', updated_at = now() WHERE id = ANY($1)`, [inboundIds]);
     await c.query('COMMIT');
@@ -322,9 +328,27 @@ async function markInbound(ids: number[], status: 'done' | 'failed' | 'skipped')
   await pool.query(`UPDATE messages SET status = $2, updated_at = now() WHERE id = ANY($1)`, [ids, status]);
 }
 
-async function notifyOwners(shopId: number, text: string) {
-  const { rows } = await pool.query('SELECT telegram_chat_id FROM owners WHERE shop_id = $1 AND telegram_chat_id IS NOT NULL', [shopId]);
-  await Promise.all(rows.map((r) => notifyOwner(r.telegram_chat_id, text)));
+// Attention alerts are throttled per conversation (WhatsApp messages are paid).
+const lastAttention = new Map<number, number>();
+async function attention(shopId: number, conv: Conversation, reason: string, detail?: string) {
+  const now = Date.now();
+  if (now - (lastAttention.get(conv.id) ?? 0) < 10 * 60_000) return;
+  lastAttention.set(conv.id, now);
+  await notifyShop(shopId, { kind: 'attention', reason, customer: conv.customer_id, detail });
+}
+
+/** Owner writes from the app: same lock, same save-then-send path as bot replies. */
+export async function ownerReply(convId: number, text: string): Promise<void> {
+  const lockClient = await pool.connect();
+  try {
+    await lockClient.query('SELECT pg_advisory_lock($1)', [convId]);
+    const conv: Conversation = (await pool.query('SELECT * FROM conversations WHERE id = $1', [convId])).rows[0];
+    await queueReply(conv, [], text, 'owner');
+    await flushPendingReplies(convId);
+  } finally {
+    await lockClient.query('SELECT pg_advisory_unlock($1)', [convId]).catch(() => {});
+    lockClient.release();
+  }
 }
 
 async function overCap(shop: Shop): Promise<boolean> {

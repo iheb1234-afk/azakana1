@@ -36,7 +36,7 @@ const waitFor = async (sql: string, n: number) => {
 
 beforeAll(async () => {
   await pool.query('DROP SCHEMA public CASCADE; CREATE SCHEMA public;');
-  await pool.query(fs.readFileSync('db/migrations/001_init.sql', 'utf8'));
+  for (const f of fs.readdirSync('db/migrations').sort()) await pool.query(fs.readFileSync(`db/migrations/${f}`, 'utf8'));
   await pool.query(fs.readFileSync('db/seed.sql', 'utf8'));
   await pool.query(
     `INSERT INTO shop_channels (shop_id, channel, external_account_id, access_token_enc) VALUES

@@ -23,6 +23,11 @@ export const config = {
     model: env('GEMINI_MODEL', 'gemini-2.5-flash'),
     timeoutMs: 20_000,
   },
+  whatsapp: {
+    token: env('WHATSAPP_TOKEN', ''),                    // system user token with whatsapp_business_messaging
+    phoneNumberId: env('WHATSAPP_PHONE_NUMBER_ID', ''),  // Azakana's sender number (not the shop's)
+    templateLang: env('WHATSAPP_TEMPLATE_LANG', 'fr'),
+  },
   telegram: {
     botToken: env('TELEGRAM_BOT_TOKEN', ''),
     adminChatId: env('ADMIN_TELEGRAM_CHAT_ID', ''),

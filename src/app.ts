@@ -1,4 +1,7 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import express from 'express';
+import { ownerApi } from './api/owner.js';
 import { config } from './config.js';
 import { pool } from './db.js';
 import { getAdapter } from './channels/registry.js';
@@ -49,6 +52,17 @@ export function createApp() {
     }
     for (const m of messages) ingest(m).catch((e) => reportError('ingest', e));
   });
+
+  // Owner app: JSON API + the built React app (web/dist), with SPA fallback.
+  app.use('/api', ownerApi());
+  app.use('/api', (_err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    res.status(500).json({ error: 'server_error' });
+  });
+  const web = path.resolve('web/dist');
+  if (fs.existsSync(web)) {
+    app.use(express.static(web, { index: false, maxAge: '1h' }));
+    app.get(/^\/(?!api|webhooks|health).*/, (_req, res) => res.sendFile(path.join(web, 'index.html')));
+  }
 
   return app;
 }
