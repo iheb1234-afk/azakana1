@@ -8,8 +8,8 @@ import { encryptToken } from '../src/lib/crypto.js';
 await pool.query('DROP SCHEMA public CASCADE; CREATE SCHEMA public;');
 for (const f of fs.readdirSync('db/migrations').sort()) await pool.query(fs.readFileSync(`db/migrations/${f}`, 'utf8'));
 await pool.query(fs.readFileSync('db/seed.sql', 'utf8'));
-await pool.query(`INSERT INTO shop_channels (shop_id, channel, external_account_id, access_token_enc, token_expiry) VALUES
-  (1,'instagram','17841400000000001',$1, now() + interval '52 days'), (1,'facebook','100000000000001',$1, now() + interval '52 days')`, [encryptToken('demo')]);
+await pool.query(`INSERT INTO shop_channels (shop_id, channel, external_account_id, access_token_enc, token_expiry, display_name) VALUES
+  (1,'instagram','17841400000000001',$1, now() + interval '52 days', '@demo.parfums'), (1,'facebook','100000000000001',$1, NULL, 'Demo Parfums')`, [encryptToken('demo')]);
 await pool.query(`INSERT INTO owners (shop_id, phone, password_hash, name) VALUES (1,'99643383',$1,'Iheb')`, [await hashPassword('demo1234')]);
 
 type Line = [dir: 'in' | 'out', text: string, by?: 'bot' | 'owner', minutesAgo?: number];

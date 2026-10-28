@@ -267,6 +267,20 @@ legend { font-size: 0.875rem; color: var(--muted); margin-bottom: 6px; }
 .composer textarea { min-height: 44px; max-height: 140px; background: var(--paper); }
 .hint { font-size: 0.75rem; color: var(--muted); padding-bottom: 8px; }
 
+/* ---------- connected accounts ---------- */
+.accounts { list-style: none; margin: 0; padding: 0; }
+.accounts li { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.accounts li:last-child { border-bottom: 0; }
+.accounts li.warn .acc-main .muted { color: var(--rouge); }
+.acc-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.acc-main strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ch-facebook { background: var(--bleu); color: var(--bleu-ink); }
+.link-btn.danger { color: var(--rouge); }
+.notice { padding: 10px 12px; border-radius: var(--r-sm); font-size: 0.9375rem; }
+.notice.ok { background: color-mix(in srgb, var(--vert) 14%, var(--paper)); color: var(--vert); }
+.notice.bad { background: var(--rouge-soft); color: var(--rouge); }
+.picker { display: flex; flex-direction: column; gap: 8px; }
+
 /* ---------- login ---------- */
 .login { min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px; background: var(--bleu); }
 .login-mark { position: fixed; inset: 0; overflow: hidden; pointer-events: none; }

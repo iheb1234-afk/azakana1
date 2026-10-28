@@ -47,7 +47,7 @@ export interface ConvDetail extends ConvRow { messages: Msg[] }
 export interface Settings {
   shop: { name: string; system_prompt: string; delivery_rules: { fee?: number; zones?: string; delay?: string } };
   owner: { name: string; phone: string; lang: 'fr' | 'ar'; notify_whatsapp: boolean; telegram_chat_id: string | null };
-  channels: { channel: string; external_account_id: string; status: string; token_expiry: string | null }[];
+  channels: { id: number; channel: string; external_account_id: string; display_name: string | null; status: string; token_expiry: string | null }[];
 }
 
 export const dt = (n: number) => `${Number(Number(n).toFixed(3))} DT`;

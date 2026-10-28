@@ -10,7 +10,9 @@ export const instagram: ChannelAdapter = {
   channel: 'instagram',
   limits: { maxTextLength: 1000, replyWindowHours: 24 },
 
-  verifySignature: (raw, headers) => verifyMetaSignature(raw, signatureHeader(headers), config.meta.appSecret),
+  // Instagram Login apps sign with the Instagram app secret; older setups with the Meta app secret. Accept either.
+  verifySignature: (raw, headers) =>
+    [config.meta.igAppSecret, config.meta.appSecret].some((s) => s && verifyMetaSignature(raw, signatureHeader(headers), s)),
 
   parse: (payload) => parseMessaging(payload, 'instagram', 'instagram'),
 

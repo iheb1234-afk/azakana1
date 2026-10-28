@@ -10,13 +10,20 @@ export const config = {
   port: Number(env('PORT', '3000')),
   databaseUrl: env('DATABASE_URL', 'postgres://postgres:postgres@localhost:5432/azakana'),
   tokenKey: env('TOKEN_ENCRYPTION_KEY', ''),
+  publicUrl: env('PUBLIC_URL', 'http://localhost:3000'),   // where Meta sends the owner back after login
   meta: {
+    appId: env('META_APP_ID', ''),                           // Facebook Login (Messenger)
     appSecret: env('META_APP_SECRET', ''),
+    igAppId: env('INSTAGRAM_APP_ID', ''),                    // Instagram Login (its own app id / secret)
+    igAppSecret: env('INSTAGRAM_APP_SECRET', ''),
+    igAuthorizeUrl: env('INSTAGRAM_AUTHORIZE_URL', 'https://www.instagram.com/oauth/authorize'),
+    igTokenUrl: env('INSTAGRAM_TOKEN_URL', 'https://api.instagram.com/oauth/access_token'),
+    fbDialogUrl: env('FACEBOOK_DIALOG_URL', 'https://www.facebook.com'),
     verifyToken: env('META_VERIFY_TOKEN', ''),
     igGraphUrl: env('INSTAGRAM_GRAPH_URL', 'https://graph.instagram.com'),
-    igApiVersion: env('INSTAGRAM_API_VERSION', 'v21.0'),
+    igApiVersion: env('INSTAGRAM_API_VERSION', 'v24.0'),
     fbGraphUrl: env('FACEBOOK_GRAPH_URL', 'https://graph.facebook.com'),
-    fbApiVersion: env('FACEBOOK_API_VERSION', 'v21.0'),
+    fbApiVersion: env('FACEBOOK_API_VERSION', 'v24.0'),
   },
   gemini: {
     apiKey: env('GEMINI_API_KEY', ''),

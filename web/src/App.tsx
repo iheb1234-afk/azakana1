@@ -67,7 +67,7 @@ export function App() {
   if (authed === null) return <div className="splash" aria-busy="true" />;
   if (!authed) return <AppCtx.Provider value={ctx}><Login onDone={refreshMe} /></AppCtx.Provider>;
 
-  const [, section, id] = hash.replace(/^#/, '').split('/');
+  const [, section, id] = hash.replace(/^#/, '').split('?')[0].split('/');
   let page;
   if (section === 'orders' && id) page = <OrderView id={Number(id)} />;
   else if (section === 'catalog') page = <Catalog />;

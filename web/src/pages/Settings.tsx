@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { api, type Settings } from '../api';
 import { useApp } from '../App';
+import { Accounts } from './Accounts';
 
 export function SettingsPage() {
   const { t, setLang, toast } = useApp();
   const [s, setS] = useState<Settings | null>(null);
   const [busy, setBusy] = useState(false);
-  useEffect(() => { api.get<Settings>('/settings').then(setS).catch(() => toast(t('err_generic'))); }, []);
+  const load = () => api.get<Settings>('/settings').then(setS).catch(() => toast(t('err_generic')));
+  useEffect(() => { load(); }, []);
   if (!s) return <div className="skeleton" />;
 
   const dr = s.shop.delivery_rules;
@@ -34,6 +36,7 @@ export function SettingsPage() {
   return (
     <>
       <header className="sub"><h1>{t('tab_settings')}</h1></header>
+      <Accounts channels={s.channels} onChange={load} />
       <form className="form" onSubmit={save}>
         <section className="panel">
           <h2>{t('shop_info')}</h2>
@@ -67,18 +70,6 @@ export function SettingsPage() {
                 onClick={() => setS({ ...s, owner: { ...s.owner, lang: l } })}>{l === 'fr' ? 'Français' : 'العربية'}</button>
             ))}
           </div>
-        </section>
-
-        <section className="panel">
-          <h2>{t('accounts')}</h2>
-          <ul className="events">
-            {s.channels.map((c) => (
-              <li key={c.channel + c.external_account_id}>
-                <span>{c.channel === 'facebook' ? 'Facebook' : c.channel === 'instagram' ? 'Instagram' : c.channel}</span>
-                <time dir="ltr">{c.token_expiry ? `${t('expires')} ${new Date(c.token_expiry).toLocaleDateString()}` : c.status}</time>
-              </li>
-            ))}
-          </ul>
         </section>
 
         <div className="actions sticky">

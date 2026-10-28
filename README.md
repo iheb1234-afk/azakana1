@@ -19,7 +19,8 @@ Instagram / Facebook webhook → channels/instagram.ts | facebook.ts (shared Met
 3. `cp .env.example .env` and fill it in.
 4. `npm run migrate` then `npm run seed` (demo perfume shop).
 5. Create the owner login: `npm run create-owner -- 1 99643383 <password> Iheb fr`
-6. Connect accounts (dev mode):
+6. Connect accounts: the owner taps **Réglages → Connecter Instagram / Connecter une page Facebook** (see "Connect
+   Instagram / Facebook" below). Manual fallback (dev mode):
    - Instagram: `npm run add-channel -- 1 instagram <IG_ACCOUNT_ID> <IG_TOKEN> 60 you@mail.com <TELEGRAM_CHAT_ID>`
    - Facebook: `npm run add-channel -- 1 facebook <PAGE_ID> <PAGE_TOKEN> 60`
 7. `npm run dev` (API + bot) and `npm run dev:web` (owner app on :5173), expose with a tunnel (e.g. `ngrok http 3000`), then in the Meta app set the webhook to
@@ -34,6 +35,21 @@ with variants, hide), **Réglages** (bot info, delivery, notifications, language
 `npm run build` compiles the API and the app; the server then serves the app at `/`.
 
 Demo data for screenshots or prospect demos: `npm run demo` (wipes the DB). Login `99643383` / `demo1234`.
+
+## Connect Instagram / Facebook (self-serve)
+
+`/oauth/instagram/start` → Instagram Login → `/oauth/instagram/callback`: code → long-lived token (60 days) → account id +
+@username → webhook subscription. `/oauth/facebook/*`: Facebook Login → long-lived user token → Pages the owner manages →
+Page token (doesn't expire) → webhook subscription. Several Pages = the owner picks one in the app.
+Tokens are stored encrypted, never sent to the browser. Instagram tokens are refreshed automatically before they expire;
+if a refresh fails, you get a Telegram alert and the owner sees "reconnect".
+
+One-time setup in the Meta app:
+- Set `PUBLIC_URL`, `META_APP_ID/SECRET`, `INSTAGRAM_APP_ID/SECRET` in `.env`.
+- Valid OAuth redirect URIs: `<PUBLIC_URL>/oauth/instagram/callback` (Instagram > API setup with Instagram login) and
+  `<PUBLIC_URL>/oauth/facebook/callback` (Facebook Login > Settings).
+- Permissions: `instagram_business_basic`, `instagram_business_manage_messages`, `pages_show_list`, `pages_messaging`,
+  `pages_manage_metadata`. In dev mode only people with a role on the app can connect; other shops need App Review.
 
 ## Owner notifications
 

@@ -8,6 +8,7 @@ import {
   requireOwner, tooManyAttempts, verifyPassword,
 } from '../lib/auth.js';
 import { reportError } from '../lib/log.js';
+import { channelApi } from '../oauth/routes.js';
 
 // Owner API. RULE: every query filters by req.owner!.shop_id. Never trust an id from the client alone.
 
@@ -56,6 +57,7 @@ export function ownerApi() {
   }));
 
   r.use(requireOwner);
+  r.use(channelApi());
 
   r.get('/me', h(async (req, res) => {
     const s = (await pool.query('SELECT id, name FROM shops WHERE id = $1', [shop(req)])).rows[0];
@@ -278,7 +280,8 @@ export function ownerApi() {
     const s = (await pool.query('SELECT name, system_prompt, delivery_rules FROM shops WHERE id = $1', [shop(req)])).rows[0];
     const o = (await pool.query('SELECT name, phone, lang, notify_whatsapp, telegram_chat_id FROM owners WHERE id = $1', [req.owner!.id])).rows[0];
     const channels = (await pool.query(
-      'SELECT channel, external_account_id, status, token_expiry FROM shop_channels WHERE shop_id = $1 ORDER BY id', [shop(req)])).rows;
+      `SELECT id, channel, external_account_id, display_name, status, token_expiry FROM shop_channels
+        WHERE shop_id = $1 AND status <> 'disabled' ORDER BY id`, [shop(req)])).rows;
     res.json({ shop: s, owner: o, channels });
   }));
 
