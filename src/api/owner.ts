@@ -231,7 +231,9 @@ export function ownerApi() {
     const messages = (await pool.query(
       `SELECT id, direction, sent_by, text, media_url, status, created_at FROM messages
         WHERE conversation_id = $1 ORDER BY created_at, id LIMIT 500`, [c.id])).rows;
-    res.json({ ...c, messages });
+    const name = (await pool.query(
+      'SELECT customer_name FROM orders WHERE conversation_id = $1 ORDER BY id DESC LIMIT 1', [c.id])).rows[0]?.customer_name ?? null;
+    res.json({ ...c, customer_name: name, messages });
   }));
 
   r.post('/conversations/:id/takeover', h(async (req, res) => {

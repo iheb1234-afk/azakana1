@@ -1,0 +1,1 @@
+{"root":["./src/App.tsx","./src/api.ts","./src/i18n.ts","./src/main.tsx","./src/pages/Catalog.tsx","./src/pages/ChatView.tsx","./src/pages/Chats.tsx","./src/pages/Login.tsx","./src/pages/OrderView.tsx","./src/pages/Orders.tsx","./src/pages/Settings.tsx"],"version":"5.7.2"}

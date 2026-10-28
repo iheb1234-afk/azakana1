@@ -16,7 +16,9 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "create-owner": "tsx scripts/create-owner.ts",
-    "build:web": "cd web && npm install && npm run build"
+    "build:web": "cd web && npm install && npm run build",
+    "demo": "tsx scripts/demo.ts",
+    "dev:web": "cd web && npm run dev"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
