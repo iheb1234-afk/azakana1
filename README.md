@@ -1,9 +1,9 @@
-# Azakana backend (Phase 1: Instagram bot core)
+# Azakana backend (Phase 1 + 1b: Instagram and Facebook Messenger)
 
-Multi-shop DM sales bot. Instagram first; Facebook = one more adapter.
+Multi-shop DM sales bot. One core, one adapter per channel.
 
 ```
-Instagram webhook → channels/instagram.ts (signature, parse, drop echoes)
+Instagram / Facebook webhook → channels/instagram.ts | facebook.ts (shared Meta code in meta.ts)
   → core/pipeline.ts
       ingest: tenant lookup (shop_channels) → dedupe (unique message id)
       processConversation: advisory lock → batch pending msgs → bare oui/non in code
@@ -18,10 +18,12 @@ Instagram webhook → channels/instagram.ts (signature, parse, drop echoes)
 2. `npm install`
 3. `cp .env.example .env` and fill it in.
 4. `npm run migrate` then `npm run seed` (demo perfume shop).
-5. Connect an Instagram account (dev mode):
-   `npm run add-channel -- 1 <IG_ACCOUNT_ID> <ACCESS_TOKEN> 60 you@mail.com <TELEGRAM_CHAT_ID>`
+5. Connect accounts (dev mode):
+   - Instagram: `npm run add-channel -- 1 instagram <IG_ACCOUNT_ID> <IG_TOKEN> 60 you@mail.com <TELEGRAM_CHAT_ID>`
+   - Facebook: `npm run add-channel -- 1 facebook <PAGE_ID> <PAGE_TOKEN> 60`
 6. `npm run dev`, expose with a tunnel (e.g. `ngrok http 3000`), then in the Meta app set the webhook to
-   `https://<tunnel>/webhooks/instagram` with your `META_VERIFY_TOKEN`, and subscribe to **messages** only.
+   `https://<tunnel>/webhooks/instagram` (Instagram product) and `https://<tunnel>/webhooks/facebook` (Messenger product),
+   with your `META_VERIFY_TOKEN`, and subscribe to **messages** only.
 
 ## Tests
 
@@ -43,12 +45,11 @@ failed send, same person on IG + FB, AI usage tracking.
 
 ## Verify before going live
 
-- Instagram webhook fields and send endpoint (`channels/instagram.ts`) against current Meta docs.
+- Webhook fields and send endpoints (`channels/meta.ts`, `instagram.ts`, `facebook.ts`) against current Meta docs.
 - Gemini model choice on real Tunisian conversations (`GEMINI_MODEL`).
 - Recap / confirmation texts in `core/pipeline.ts` and `core/orders.ts` (French only for now).
 
 ## Next
 
 - Phase 1 exit: replay 10–20 real pilot conversations through the bot on a test IG account.
-- 1b: `channels/facebook.ts`.
 - 2–3: owner app (orders, catalog table, take-over button), OAuth "Connect Instagram".

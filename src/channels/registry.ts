@@ -1,8 +1,12 @@
 import type { Channel, ChannelAdapter } from '../types.js';
+import { facebook } from './facebook.js';
 import { instagram } from './instagram.js';
 
-// Adding Facebook (Phase 1b) = write channels/facebook.ts and register it here. The core does not change.
-const adapters = new Map<Channel, ChannelAdapter>([[instagram.channel, instagram]]);
+// Adding a channel = write channels/<name>.ts and register it here. The core does not change.
+const adapters = new Map<Channel, ChannelAdapter>([
+  [instagram.channel, instagram],
+  [facebook.channel, facebook],
+]);
 
 export function registerAdapter(a: ChannelAdapter) {
   adapters.set(a.channel, a);

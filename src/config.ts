@@ -15,6 +15,8 @@ export const config = {
     verifyToken: env('META_VERIFY_TOKEN', ''),
     igGraphUrl: env('INSTAGRAM_GRAPH_URL', 'https://graph.instagram.com'),
     igApiVersion: env('INSTAGRAM_API_VERSION', 'v21.0'),
+    fbGraphUrl: env('FACEBOOK_GRAPH_URL', 'https://graph.facebook.com'),
+    fbApiVersion: env('FACEBOOK_API_VERSION', 'v21.0'),
   },
   gemini: {
     apiKey: env('GEMINI_API_KEY', ''),
